@@ -1,0 +1,13 @@
+original_data/*
+!original_data/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+.cache/
+cache/
+work/
+workspace/
+*.tmp
+*.log
+__pycache__/
+.pytest_cache/
+.DS_Store
