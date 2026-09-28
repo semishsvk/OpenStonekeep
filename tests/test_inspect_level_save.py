@@ -44,10 +44,13 @@ def test_parse_minimal_level_save(tmp_path: Path) -> None:
     assert info["grid_end"] == 0x20
     assert info["post_grid_bytes"] == 4
 
+    assert info["chain_heads"]["0x0D"]["semantic_class"] == "poj_object"
     assert info["chain_heads"]["0x0D"]["min_active_head"] == 12
     assert info["chain_heads"]["0x0F"]["semantic_class"] == "monster"
     assert info["chain_heads"]["0x0F"]["min_active_head"] == 7
+    assert info["chain_heads"]["0x11"]["semantic_class"] == "msp_maze_prop"
     assert info["chain_heads"]["0x11"]["min_active_head"] == 3
+    assert info["chain_heads"]["0x13"]["semantic_class"] is None
     assert info["chain_heads"]["0x13"]["active_cells"] == 0
 
 
