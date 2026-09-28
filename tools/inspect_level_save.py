@@ -8,8 +8,9 @@ Evidence-backed layout:
   u16 height
   width*height records of 21 bytes
 
-The four signed 16-bit fields at offsets 0x0D, 0x0F, 0x11 and 0x13 are
-structural linked-list heads. Semantic class names are intentionally left open.
+The signed 16-bit fields at offsets 0x0D, 0x0F, 0x11 and 0x13 are structural
+linked-list heads. Offset 0x0F is verified as the monster-record chain; the
+semantic class names of the other three heads intentionally remain open.
 """
 from __future__ import annotations
 import argparse
@@ -21,10 +22,10 @@ from pathlib import Path
 CELL_SIZE = 0x15
 SENTINEL_NONE = -100  # 0xFF9C
 CHAIN_HEADS = {
-    0x0D: {"runtime_stride": 0x2F, "next_offset": 0x18},
-    0x0F: {"runtime_stride": 0x111, "next_offset": 0x3A},
-    0x11: {"runtime_stride": 0x30, "next_offset": 0x10},
-    0x13: {"runtime_stride": 0x66, "next_offset": 0x63},
+    0x0D: {"runtime_stride": 0x2F, "next_offset": 0x18, "semantic_class": None},
+    0x0F: {"runtime_stride": 0x111, "next_offset": 0x3A, "semantic_class": "monster"},
+    0x11: {"runtime_stride": 0x30, "next_offset": 0x10, "semantic_class": None},
+    0x13: {"runtime_stride": 0x66, "next_offset": 0x63, "semantic_class": None},
 }
 
 def s16(buf: bytes, off: int) -> int:
@@ -106,8 +107,9 @@ def main() -> int:
         f"sha256={info['sha256']}"
     )
     for off, chain in info["chain_heads"].items():
+        semantic = chain["semantic_class"] or "unknown"
         print(
-            f"head {off}: stride=0x{chain['runtime_stride']:X} "
+            f"head {off}: class={semantic} stride=0x{chain['runtime_stride']:X} "
             f"next=0x{chain['next_offset']:X} "
             f"active={chain['active_cells']} "
             f"range={chain['min_active_head']}..{chain['max_active_head']}"
