@@ -60,7 +60,10 @@ confirm:
 - grid range = `[0x0B, 0x3DE5)`
 
 The executable level loader independently reads exactly
-`width * height * 0x15` bytes into the runtime grid.
+`dimension_A * dimension_B * 0x15` bytes into the runtime grid.
+
+K291-D establishes the runtime/grid orientation for LEVEL01 as **26 rows × 29
+columns**.
 
 ### STONE-K291-C — runtime cell chains
 
@@ -74,40 +77,73 @@ record pools:
 - `cell+0x11` → stride `0x30`, next `+0x10`
 - `cell+0x13` → stride `0x66`, next `+0x63`
 
-The four-byte field `cell+0x03..+0x06` is verified as a grouped spatial tuple,
-but its directional meaning/order remains OPEN.
+### STONE-K291-D — cell semantics + direction/topology
 
-### STONE-K291-D — cell-chain semantics
+Status: **VERIFIED DIRECTION/TOPOLOGY PASS; semantic tail partial**
 
-Status: **PARTIAL SEMANTIC PASS**
+Verified chain semantics:
 
-- `cell+0x0D` → **POJ/object-instance chain VERIFIED**
+- `cell+0x0D` → **POJ/object-instance chain**
   - runtime pool `0x19E2E0`, stride `0x2F`, 2000 slots
   - object type resource: `OBJTYPE.DEF`
   - runtime object-type table: 250 × `0x38`
   - binary path generates/loads `.POJ` resources
-- `cell+0x0F` → **monster-instance chain VERIFIED**
-- `cell+0x11` → **MSP/maze-prop instance chain VERIFIED**
+- `cell+0x0F` → **monster-instance chain**
+- `cell+0x11` → **MSP/maze-prop instance chain**
   - runtime/save pool `0x1B5210`, stride `0x30`, 250 slots
   - `record+0` indexes a separate static `0x2E` type table
   - all 19 active LEVEL01 type names map exactly to GROUP01 `.MSP` resources
-- `cell+0x13` → 0x66 pool is **STRUCTURAL projectile/effect-like**;
-  exact umbrella semantic class remains OPEN.
+- `cell+0x13` → `0x66` pool remains **STRUCTURAL projectile/effect-like**;
+  exact umbrella semantic class is OPEN.
+
+Verified direction/topology model:
+
+- engine direction order: `0=N, 1=W, 2=S, 3=E`
+- direction deltas: N `(-1,0)`, W `(0,-1)`, S `(+1,0)`, E `(0,+1)` in
+  `(row,column)` space
+- `cell+0x03..+0x06` is direction-indexed in **N,W,S,E** order
+- `cell+0x01` is a mutable directional bitfield with masks
+  `N=0x01, W=0x02, S=0x04, E=0x08`
+- `cell+0x02` low nibble is a static directional edge/barrier mask with masks
+  `N=0x08, W=0x02, S=0x04, E=0x01`
+
+LEVEL01 static-edge corpus validation at 26 rows × 29 columns:
+
+- 1,453 undirected internal cell adjacencies
+- 774 with both static bits set
+- 679 with both static bits clear
+- **0 mismatches**
+- **100% directional reciprocity**
+- all four outer boundaries are fully closed by the corresponding static bit
+
+This static mask is not yet claimed to be the complete player-walkability
+model. Dynamic directional state plus relevant runtime/object semantics must be
+layered on top.
 
 Read-only inspection tools:
 - `tools/inspect_level_save.py`
 - `tools/inspect_group.py`
 
-Synthetic parser regression: **4 PASS** locally.
+Synthetic `inspect_level_save` regression: **4 PASS**.
 
 ## Current gate
 
-STONE-K291-D remains active. Required before K292 connectivity work can be
-trusted:
+**STONE-K291-D direction/topology gate: PASS.**
 
-1. prove the meaning/order of `cell+0x03..+0x06`;
-2. map topology/passability bits in `cell+0x02`;
-3. finish the semantic classification of the `0x66` pool if needed for
-   connectivity/runtime occupancy.
+`cell+0x13` / `0x66` semantic naming remains OPEN but no longer blocks a
+structural static-edge validator.
 
-No renderer or connectivity graph should depend on guessed topology semantics.
+### Next authorized work — STONE-K292-A
+
+Build a **static edge consistency validator**, not a final movement solver:
+
+1. validate N/W/S/E reciprocity across every internal cell adjacency;
+2. validate boundary closure/integrity;
+3. report directional tuple and mutable-edge state without treating them as
+   static walls;
+4. classify serialized grid cells/void regions before deriving navigable
+   connected components;
+5. keep final walkability/softlock analysis gated on dynamic/runtime semantics.
+
+No renderer or movement implementation should collapse static edge topology,
+mutable edge state, and runtime object occupancy into one guessed rule.
