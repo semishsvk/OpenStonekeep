@@ -133,17 +133,39 @@ Synthetic `inspect_level_save` regression: **4 PASS**.
 `cell+0x13` / `0x66` semantic naming remains OPEN but no longer blocks a
 structural static-edge validator.
 
-### Next authorized work — STONE-K292-A
+### STONE-K292-A — static edge consistency validator
 
-Build a **static edge consistency validator**, not a final movement solver:
+Status: **PASS — VERIFIED on 2 authoritative starter levels**
 
-1. validate N/W/S/E reciprocity across every internal cell adjacency;
-2. validate boundary closure/integrity;
-3. report directional tuple and mutable-edge state without treating them as
-   static walls;
-4. classify serialized grid cells/void regions before deriving navigable
-   connected components;
-5. keep final walkability/softlock analysis gated on dynamic/runtime semantics.
+`tools/validate_level_topology.py` validates only the evidence-backed static
+topology layer:
+
+- reciprocal N/W/S/E low-nibble `cell+0x02` edges;
+- complete outer-boundary closure;
+- mutable `cell+0x01` direction state reported separately;
+- directional `cell+0x03..+0x06` activity reported separately.
+
+Authoritative corpus results:
+
+- `LEVEL01.SAV`: set=774, clear=679, mismatch=0, boundary 29/26/29/26 PASS
+- `LEVEL01A.SAV`: set=434, clear=1019, mismatch=0, boundary 29/26/29/26 PASS
+- mutable directional bits: zero in both starter saves
+
+Combined synthetic K291-D + K292-A regression: **8 PASS**.
+
+K292-A explicitly does **not** claim that every static-clear adjacency is
+player-walkable.
+
+### Next authorized work — STONE-K292-B
+
+Classify serialized cell roles/void regions before navigable connected
+components or softlock analysis:
+
+1. prove `cell+0x00` flag semantics relevant to valid/void/traversable cells;
+2. identify executable semantics of the reciprocal high-nibble direction bits
+   in `cell+0x02`;
+3. separate static-clear adjacency from dynamic/runtime occupancy;
+4. only then derive the navigation graph used for one-way and softlock checks.
 
 No renderer or movement implementation should collapse static edge topology,
 mutable edge state, and runtime object occupancy into one guessed rule.
