@@ -18,6 +18,7 @@ Cell fields used here:
   +0x01  mutable directional bitfield (N=0x01, W=0x02, S=0x04, E=0x08)
   +0x02  static directional edge/barrier mask (N=0x08, W=0x02, S=0x04, E=0x01)
   +0x03..+0x06 direction-indexed byte tuple in N,W,S,E order
+  +0x07  signed per-cell action/event handler index
   +0x0D  POJ/object-instance chain head
   +0x0F  monster-instance chain head
   +0x11  MSP/maze-prop instance chain head
@@ -178,6 +179,12 @@ def parse(path: Path) -> dict:
         for i in range(cell_count)
     ]
 
+    handler_values = [s16(cell, 0x07) for cell in cells]
+    handler_non_default = [value for value in handler_values if value != 0]
+    handler_counts = {}
+    for value in handler_values:
+        handler_counts[str(value)] = handler_counts.get(str(value), 0) + 1
+
     chains = {}
     for off, meta in CHAIN_HEADS.items():
         values = [s16(cell, off) for cell in cells]
@@ -210,6 +217,16 @@ def parse(path: Path) -> dict:
         "grid_start": grid_start,
         "grid_end": grid_end,
         "post_grid_bytes": len(data) - grid_end,
+        "event_handler": {
+            "cell_offset": 0x07,
+            "default_index": 0,
+            "non_default_cells": len(handler_non_default),
+            "unique_indices": len(set(handler_values)),
+            "min_index": min(handler_values) if handler_values else None,
+            "max_index": max(handler_values) if handler_values else None,
+            "counts": handler_counts,
+            "semantic_class": "per_cell_action_event_handler",
+        },
         "chain_heads": chains,
         "topology": _topology_summary(cells, row_count, column_count),
     }
@@ -254,6 +271,13 @@ def main() -> int:
             f"delta=({d['delta_row']:+d},{d['delta_column']:+d}) "
             f"boundary={d['boundary_static_bits_set']}/{d['boundary_cells']}"
         )
+    event = info["event_handler"]
+    print(
+        f"cell+0x07 event_handler: default={event['default_index']} "
+        f"non_default={event['non_default_cells']} "
+        f"unique={event['unique_indices']} "
+        f"range={event['min_index']}..{event['max_index']}"
+    )
     for off, chain in info["chain_heads"].items():
         semantic = chain["semantic_class"] or "unknown"
         print(
