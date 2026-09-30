@@ -185,19 +185,44 @@ Read-only classifier:
 - tests/test_classify_level_cells.py
 - checkpoints/STONE-K292-B.md
 
-### Next authorized work — STONE-K292-C
+### STONE-K292-C — player translation clearance + event layer
 
-Prove the player-specific movement layer before one-way/softlock analysis:
+Status: **PASS — VERIFIED ordinary player translation call-chain**
 
-1. locate the player movement/transition clearance routine;
-2. map executable consumers/mutators of cell+0x01 mutable directional bits;
-3. compare player rules with the verified monster actor-clearance model;
-4. keep static region, low static edge, high secondary blocker, mutable edge
-   state, and runtime POJ/MSP/monster/effect occupancy as separate layers;
-5. only then derive a player-navigation graph and CRITICAL softlock validator.
+Player translation is now separated into evidence-typed layers:
 
-Framework candidate: model these as evidence-typed NavigationEvidence /
-NavigationIR layers; promotion remains cross-game evidence-gated.
+- direct forward/backward primitive: low cell+0x02 static edge mask;
+- runtime physical precheck: cell+0x11 MSP/maze-prop directional clearance;
+- runtime occupancy precheck: monster-linked 0x0C spatial index;
+- script/event layer: signed cell+0x07 handler index -> per-cell callback.
 
-No renderer or movement implementation should collapse these layers into one
-guessed rule.
+The ordinary direct translation path does not directly read cell0 bit0x10,
+cell0 bit0x80, high cell+0x02, or cell+0x01 selectors 10..13. Those layers
+remain actor-specific, state-tracking, or indirectly script-consumable.
+
+Starter corpus event handlers:
+- LEVEL01.SAV: 81 non-default cells, 52 unique IDs, range 0..116.
+- LEVEL01A.SAV: 18 non-default cells, 16 unique IDs, range 0..419.
+
+The main input path tests the per-cell callback before translation, so static
+clearance alone is insufficient for final one-way/softlock conclusions.
+
+Read-only evidence:
+- checkpoints/STONE-K292-C.md
+- tools/inspect_level_save.py exposes cell+0x07 handler metadata
+- synthetic handler regression added to tests/test_inspect_level_save.py
+
+### Next authorized work — STONE-K292-D
+
+Build an evidence-typed player edge graph:
+
+1. STATIC_BLOCKED when the verified low static edge bit is set;
+2. STATIC_CLEAR_RUNTIME_GATED when the low bit is clear but runtime MSP/
+   monster-linked occupancy and event state still apply;
+3. SCRIPTED where non-default cell action handlers can alter/veto behavior;
+4. keep actor-specific monster blockers separate from player policy;
+5. validate components and transitions without issuing CRITICAL softlock
+   verdicts until the relevant runtime/event state is resolved.
+
+Framework candidate: NavigationEvidence / NavigationIR with evidence levels and
+actor-specific policies; cross-game promotion remains gated.
