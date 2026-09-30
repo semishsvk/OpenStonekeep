@@ -14,6 +14,7 @@ def make_single_cell_save(path: Path) -> None:
     cell[0x00] = 0x10
     cell[0x02] = 0x0F  # all four static edge bits present on a 1x1 boundary
     cell[0x03:0x07] = bytes([1, 2, 3, 4])
+    struct.pack_into("<h", cell, 0x07, 42)
     struct.pack_into("<h", cell, 0x0D, 12)
     struct.pack_into("<h", cell, 0x0F, 7)
     struct.pack_into("<h", cell, 0x11, 3)
@@ -67,6 +68,14 @@ def test_parse_minimal_level_save(tmp_path: Path) -> None:
     assert info["grid_start"] == 0x0B
     assert info["grid_end"] == 0x20
     assert info["post_grid_bytes"] == 4
+
+    assert info["event_handler"]["semantic_class"] == "per_cell_action_event_handler"
+    assert info["event_handler"]["default_index"] == 0
+    assert info["event_handler"]["non_default_cells"] == 1
+    assert info["event_handler"]["unique_indices"] == 1
+    assert info["event_handler"]["min_index"] == 42
+    assert info["event_handler"]["max_index"] == 42
+    assert info["event_handler"]["counts"] == {"42": 1}
 
     assert info["chain_heads"]["0x0D"]["semantic_class"] == "poj_object"
     assert info["chain_heads"]["0x0D"]["min_active_head"] == 12
