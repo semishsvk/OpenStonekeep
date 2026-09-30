@@ -257,7 +257,7 @@ def main()->int:
             c=r["directed_edge_classes"]; u=r["undirected_static"]
             s=r["script_evidence"]; comp=r["static_clear_candidate_components"]
             print(
-                f'»'PASS' if u['mismatched']==0 else 'FAIL'} {r['path']}: "
+                f"{'PASS' if u['mismatched']==0 else 'FAIL'} {r['path']}: "
                 f"{r['rows']}x{r['columns']} "
                 f"blocked={u['blocked']} clear={u['clear']} mismatch={u['mismatched']}"
             )
