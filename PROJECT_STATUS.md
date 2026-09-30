@@ -256,3 +256,25 @@ Resolve candidate scripted/runtime edges into state-qualified transitions:
 6. only then authorize CRITICAL one-way/softlock validation.
 
 Framework candidate: NavigationEvidence / NavigationIR with directed edges, actor policy, static/runtime/script evidence and unresolved-state reasons. Cross-game promotion remains gated.
+
+### STONE-K292-E — relocation-aware handler dispatch gate
+
+Status: **PARTIAL PASS — handler inventory verified; final target/action semantics remain gated**
+
+K292-E corrects the representation of cell+0x07 dispatch targets. The executable getter at virtual 0x6C5CC indexes a 4-byte dispatch table at virtual 0xF16A and installs the selected entry as an indirect-call target. Because the executable is LE, raw on-disk bytes are relocation-sensitive and are not promoted to final linear function addresses.
+
+Candidate source-handler IDs on static-clear edges form a union of 62 IDs across LEVEL01.SAV and LEVEL01A.SAV. The new `tools/inspect_handler_dispatch.py` inventories these IDs and records raw table-slot evidence without guessing resolved targets.
+
+Current gate:
+- handler target resolution: **BLOCKED_ON_LE_RELOCATION**
+- movement action classification: **NOT_AUTHORIZED**
+- one-way verdict: **NOT AUTHORIZED**
+- softlock verdict: **NOT AUTHORIZED**
+
+Synthetic handler-dispatch regression: **2 PASS**.
+
+### Next authorized work — STONE-K292-E.1
+
+Resolve the LE relocation/fixup records affecting the dispatch table at virtual 0xF16A; reconstruct final indirect targets; trace movement selectors 2/3/4/5; classify only directly evidenced allow/veto/state mutations; then feed resolved outcomes into the state-qualified player transition graph.
+
+Framework candidate: NavigationIR should represent dispatch references with executable format, virtual address, raw entry, relocation state, resolved target and resolution evidence.
