@@ -212,17 +212,47 @@ Read-only evidence:
 - tools/inspect_level_save.py exposes cell+0x07 handler metadata
 - synthetic handler regression added to tests/test_inspect_level_save.py
 
-### Next authorized work — STONE-K292-D
+### STONE-K292-D — evidence-typed player edge graph
 
-Build an evidence-typed player edge graph:
+Status: **PASS — candidate graph constructed; softlock verdict remains gated**
 
-1. STATIC_BLOCKED when the verified low static edge bit is set;
-2. STATIC_CLEAR_RUNTIME_GATED when the low bit is clear but runtime MSP/
-   monster-linked occupancy and event state still apply;
-3. SCRIPTED where non-default cell action handlers can alter/veto behavior;
-4. keep actor-specific monster blockers separate from player policy;
-5. validate components and transitions without issuing CRITICAL softlock
-   verdicts until the relevant runtime/event state is resolved.
+`tools/build_navigation_evidence.py` now classifies every in-bounds directed player edge as:
 
-Framework candidate: NavigationEvidence / NavigationIR with evidence levels and
-actor-specific policies; cross-game promotion remains gated.
+- `STATIC_BLOCKED` — verified low `cell+0x02` player barrier set;
+- `STATIC_CLEAR_RUNTIME_GATED` — low static edge clear, default source handler, but MSP/monster runtime prechecks unresolved;
+- `SCRIPTED` — low static edge clear and non-default source `cell+0x07` pre-movement handler.
+
+Actor-specific monster blockers (`cell0 0x10/0x80` and high `cell+0x02`) are reported but do not suppress player candidate edges.
+
+Authoritative starter results:
+
+- LEVEL01.SAV:
+  - static blocked/clear/mismatch = 774/679/0
+  - directed = 1548 STATIC_BLOCKED, 1231 RUNTIME_GATED, 127 SCRIPTED
+  - 71 static-clear pairs have source-handler asymmetry
+  - candidate static components = 153; largest 138
+- LEVEL01A.SAV:
+  - static blocked/clear/mismatch = 434/1019/0
+  - directed = 868 STATIC_BLOCKED, 2016 RUNTIME_GATED, 22 SCRIPTED
+  - 22 static-clear pairs have source-handler asymmetry
+  - candidate static components = 131; largest 469
+
+These asymmetries are candidates only. `one_way_verdict_authorized=false` and `softlock_verdict_authorized=false`.
+
+Read-only evidence:
+- `tools/build_navigation_evidence.py`
+- `tests/test_build_navigation_evidence.py` — 4 PASS
+- `checkpoints/STONE-K292-D.md`
+
+### Next authorized work — STONE-K292-E
+
+Resolve candidate scripted/runtime edges into state-qualified transitions:
+
+1. enumerate non-default handler IDs on static-clear candidate edges;
+2. map handler IDs to function pointers;
+3. classify movement actions 2/3/4/5 as allow/veto/state mutation;
+4. resolve MSP directional masks and monster spatial categories for the same edges;
+5. build the first state-qualified player transition graph;
+6. only then authorize CRITICAL one-way/softlock validation.
+
+Framework candidate: NavigationEvidence / NavigationIR with directed edges, actor policy, static/runtime/script evidence and unresolved-state reasons. Cross-game promotion remains gated.
