@@ -156,16 +156,48 @@ Combined synthetic K291-D + K292-A regression: **8 PASS**.
 K292-A explicitly does **not** claim that every static-clear adjacency is
 player-walkable.
 
-### Next authorized work — STONE-K292-B
+### STONE-K292-B — cell-region + actor-clearance classification
 
-Classify serialized cell roles/void regions before navigable connected
-components or softlock analysis:
+Status: **PASS — VERIFIED actor-clearance layering; player movement remains gated**
 
-1. prove `cell+0x00` flag semantics relevant to valid/void/traversable cells;
-2. identify executable semantics of the reciprocal high-nibble direction bits
-   in `cell+0x02`;
-3. separate static-clear adjacency from dynamic/runtime occupancy;
-4. only then derive the navigation graph used for one-way and softlock checks.
+Three evidence layers are now separated:
 
-No renderer or movement implementation should collapse static edge topology,
-mutable edge state, and runtime object occupancy into one guessed rule.
+- cell+0x00 bit 0x10 — static actor-clearance / region gate. It participates
+  in the executable monster-clearance test and gates interior BMAP bit-0x01
+  initialization.
+- cell+0x00 bit 0x80 — runtime-mutable actor-clearance blocker. Independent
+  executable paths set it with OR 0x80 and clear it with AND 0x7F.
+- cell+0x02 high directional bits — secondary actor-clearance blocker layer:
+  N=0x80, W=0x20, S=0x40, E=0x10. Monster clearance tests combined masks
+  0x88/0x22/0x44/0x11.
+
+Corpus results:
+- LEVEL01.SAV: bit10=381, bit80=15, interior !bit10=321,
+  bit10-boundary sealed=591/591, high-without-low=0/60.
+- LEVEL01A.SAV: bit10=577, bit80=0, interior !bit10=125,
+  bit10-boundary sealed=251/251, high-without-low=0/26.
+
+The exact designer-facing meaning of bit 0x10, the high-bit subtype, and BMAP
+bit 0x01 remains OPEN. K292-B does not label cells floor/void/player-walkable.
+
+Read-only classifier:
+- tools/classify_level_cells.py
+- tests/test_classify_level_cells.py
+- checkpoints/STONE-K292-B.md
+
+### Next authorized work — STONE-K292-C
+
+Prove the player-specific movement layer before one-way/softlock analysis:
+
+1. locate the player movement/transition clearance routine;
+2. map executable consumers/mutators of cell+0x01 mutable directional bits;
+3. compare player rules with the verified monster actor-clearance model;
+4. keep static region, low static edge, high secondary blocker, mutable edge
+   state, and runtime POJ/MSP/monster/effect occupancy as separate layers;
+5. only then derive a player-navigation graph and CRITICAL softlock validator.
+
+Framework candidate: model these as evidence-typed NavigationEvidence /
+NavigationIR layers; promotion remains cross-game evidence-gated.
+
+No renderer or movement implementation should collapse these layers into one
+guessed rule.
