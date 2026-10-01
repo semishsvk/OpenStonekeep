@@ -171,7 +171,7 @@ def build(path:Path,include_attempts=False):
                     if src_handler in OBSERVED_SIDE_EFFECT_HANDLERS:
                         traverse_observed_mutator[mode]+=1
                 pair_records.setdefault((row,col,name,nr,nc),{})[mode]=outcome
-                if outcome!='TRANSLATION_EXECUTES': affected_interfaces.add((min(i,j),max(i,j)))
+                if reason!='TRAVERSE': affected_interfaces.add((min(i,j),max(i,j)))
                 if include_attempts:
                     attempts.append({
                         'source':[row,col],'destination':[nr,nc],'direction':name,
