@@ -1,302 +1,313 @@
 # STONE-K292-E.9 — special portal enable / cancel state machine
 
 - Date: 2026-10-01
-- Status: **PASS — starter transition-family portal enable/cancel semantics VERIFIED**
+- Status: **PASS — portal mechanism VERIFIED; action-15 enable gate is state-qualified**
 - Knowledge classification: GAME-SPECIFIC
 - Scope: the nine E.8 starter transition interfaces and the engine special-barrier movement path
 
-## Result
+## Correction to the first E.9 freeze
 
-E.8 proved that all nine starter level-transition interfaces are serialized as
-reciprocally LOW-static-closed edges, which appeared incompatible with the
-ordinary translation primitive.
+The first E.9 checkpoint correctly resolved the HIGH-secondary special-barrier
+path and the reciprocal LOW clear/restore mechanism, but over-generalized the
+common `0x3CFEE` action-15 behavior to every wrapper.
 
-E.9 resolves that apparent contradiction.
+Direct wrapper tracing proves that several transition handlers add an
+action-15 precondition **before** delegating to the common family.
 
-The engine has a separate movement path for an **immediate LOW barrier carrying
-the matching HIGH-secondary direction bit**. That path calls the current cell
-handler with action 15, temporarily clears the reciprocal LOW edge through the
-generic selector-2 API, runs its movement/animation phase, and leaves the edge
-in an armed open state. A subsequent forward input then follows the ordinary
-movement path and reaches the already VERIFIED E.8 action-3/action-2
-level-transition logic.
+The corrected serialized starter result is therefore:
 
-A cancellation path calls actions 17/18 and restores the reciprocal LOW edge.
+- reciprocal LOW+HIGH transition markers: **9/9**
+- action-15 ALLOW in the serialized snapshot: **6/9**
+- action-15 BLOCKED in the serialized snapshot: **3/9**
 
-The HIGH-secondary bit is preserved throughout this open/reclose cycle. For
-this state machine it is therefore an evidence-backed special-barrier marker,
-while the LOW bit carries the current ordinary-translation closed/open state.
-
-## Direction mask tables
-
-The special path uses relocation-sensitive data in object 3.
-
-At object 3 + `0xFCD5`:
-
-    F7 FD FB FE
-
-These are exactly the bytewise complements of the verified LOW masks:
-
-    N W S E = 08 02 04 01
-
-At object 3 + `0xFCD9`:
-
-    08 02 04 01
-
-Therefore:
-
-- `AND FCD5[direction]` clears exactly the selected LOW edge bit;
-- `OR FCD9[direction]` restores exactly the selected LOW edge bit.
-
-No HIGH-secondary bit is changed by either operation.
+The mechanism itself remains verified. Portal enablement is explicitly
+state-qualified.
 
 ## Special-barrier detection
 
 Runtime `0x13646` scans from the live player cell in a requested direction.
 
-It:
+It loads:
 
-1. loads the LOW direction mask from the verified LOW table;
-2. loads the matching HIGH-secondary direction mask;
-3. scans at most five cells;
-4. reads selector 2 / `cell+0x02`;
-5. stops at the first LOW wall;
-6. stores `cell+0x02 & HIGH_mask` into `0x1BC4E4`;
-7. returns the distance to that LOW wall.
+- LOW direction masks: N/W/S/E = `08/02/04/01`
+- matching HIGH-secondary masks: `80/20/40/10`
 
-The forward input dispatcher uses this result:
+It stops at the first LOW wall, stores:
 
-- `0x1BC4E4 != 0`;
-- wall distance `0x1BC5C2 == 0`;
-- special movement state `0x1BC4E2 == 0`;
+    cell+0x02 & HIGH_mask -> 0x1BC4E4
 
-to divert from the ordinary physical-precheck path into runtime `0x2CE8B`.
+and returns the distance to that LOW wall.
 
-Thus an immediate LOW+HIGH barrier is handled by the special state machine
-before the ordinary forward translation primitive sees the closed LOW edge.
+The forward input dispatcher diverts to runtime `0x2CE8B` when:
 
-## Starter portal marker coverage
+- `0x1BC4E4 != 0`
+- wall distance `0x1BC5C2 == 0`
+- special state `0x1BC4E2 == 0`
 
-All nine E.8 transition interfaces have the matching special marker on **both**
-sides in the authoritative serialized saves:
+Thus an **immediate LOW+HIGH edge** is processed by the special path before the
+ordinary translation primitive tests the LOW bit.
 
-- source LOW bit set: 9/9
-- source matching HIGH bit set: 9/9
-- adjacent reciprocal LOW bit set: 9/9
-- adjacent reciprocal HIGH bit set: 9/9
-- complete reciprocal LOW+HIGH special marker: **9/9**
+## Reciprocal marker coverage
+
+All nine E.8 transition interfaces carry the marker on both sides:
+
+- source LOW: 9/9
+- source matching HIGH: 9/9
+- adjacent reciprocal LOW: 9/9
+- adjacent reciprocal HIGH: 9/9
+- complete reciprocal LOW+HIGH marker: **9/9**
 
 Examples:
 
-- S-facing portal source: `cell+0x02 = 0x47` -> LOW S `0x04` + HIGH S `0x40`;
-- reciprocal north side: `0x8F` -> LOW N `0x08` + HIGH N `0x80`;
-- N-facing source: `0x8B`;
-- W-facing source: `0x2E`.
+- S source `0x47` contains LOW S `0x04` + HIGH S `0x40`
+- reciprocal N side `0x8F` contains LOW N `0x08` + HIGH N `0x80`
+- N source examples use `0x8B`
+- W source example uses `0x2E`
 
-The exact byte contains unrelated direction bits as well; only the selected
-direction pair is claimed here.
+Only the selected direction bits are interpreted here; the complete cell byte
+may contain unrelated direction flags.
+
+## Exact LOW mutation masks
+
+Object 3 + `0xFCD5`:
+
+    F7 FD FB FE
+
+These are exactly:
+
+    ~08, ~02, ~04, ~01
+
+Object 3 + `0xFCD9`:
+
+    08 02 04 01
+
+Therefore the special path performs an exact directional LOW clear with
+`AND FCD5[dir]`, while the cancel/restore path performs an exact LOW set with
+`OR FCD9[dir]`.
+
+Neither operation clears the matching HIGH-secondary marker.
+
+## Wrapper-specific action-15 gates
+
+### LEVEL01
+
+Handler 87, source cell `(2,3)`:
+
+    allow iff cell(2,3)+0x09 != 0
+
+Serialized value:
+
+    0
+
+Result:
+
+    BLOCKED
+
+Handler 88, source cell `(2,25)`:
+
+    allow iff current cell+0x09 != -1
+
+Serialized value:
+
+    1
+
+Result:
+
+    ALLOW
+
+Handlers 89 and 90:
+
+    no extra action-15 wrapper gate
+
+Result:
+
+    ALLOW / ALLOW
+
+Handlers 106 and 107:
+
+    allow iff current cell+0x09 != -1
+
+Serialized values:
+
+    -1 / -1
+
+Result:
+
+    BLOCKED / BLOCKED
+
+LEVEL01 serialized action-15 result:
+
+- ALLOW: handlers **88, 89, 90**
+- BLOCKED: handlers **87, 106, 107**
+
+### LEVEL01A
+
+Handlers 411, 412 and 413 delegate action 15 directly to the common transition
+family.
+
+Result:
+
+- 411: ALLOW
+- 412: ALLOW
+- 413: ALLOW
+
+### Aggregate
+
+Starter transition handlers:
+
+- ALLOW: **6**
+- BLOCKED: **3**
+- total: **9**
+
+The common transition family/default path still returns success after a
+wrapper gate passes. E.7 proves the starter per-level global callback in that
+path is an exact `RET`.
 
 ## State machine
 
-### 0 — CLOSED_SPECIAL
+### CLOSED_SPECIAL
 
-Serialized / idle portal state:
+The idle portal edge has reciprocal LOW+HIGH markers.
 
-- source and reciprocal adjacent edge have LOW + matching HIGH bits;
-- ordinary translation would reject the LOW bit;
-- HIGH scan identifies the immediate edge as special.
+Ordinary translation would reject LOW, but the HIGH scan diverts the immediate
+edge to the special movement path.
 
-Forward input diverts to `0x2CE8B`.
+### ENABLE_GATE — action 15
 
-### action 15 — ENABLE gate
+`0x2CE8B` snapshots live row/column/facing and invokes action 15 on the
+current cell handler.
 
-`0x2CE8B` snapshots live row/column/facing and invokes the current cell
-handler with action 15.
+- if the wrapper returns 0: the portal remains CLOSED_SPECIAL;
+- if it returns nonzero: the engine enters OPENING.
 
-The E.8 transition family at `0x3CFEE` only specializes actions 2, 3 and 31.
-Actions 15, 16, 17 and 18 fall through to `0x3D4F5`.
+This is the state dependency missing from the first E.9 freeze.
 
-For LEVEL01 and LEVEL01A, E.7 proved the per-level callback used by
-`0x3D4F5` is an exact `RET`; the default callback path returns 1.
+### OPENING — state 1
 
-Therefore action 15 is **ALLOW_VERIFIED** for all nine starter transition
-handlers.
+After a successful action-15 gate, `0x2CE8B`:
 
-### 1 — OPENING
+1. reads selector 2 on the source cell;
+2. clears exactly the facing LOW bit via `FCD5[facing]`;
+3. writes selector 2 back;
+4. computes the adjacent cell;
+5. clears its exact reciprocal LOW bit;
+6. recalculates direction state;
+7. sets `0x1BC4E2 = 1`.
 
-After action 15 succeeds, `0x2CE8B`:
+The HIGH marker remains set.
 
-- reads selector 2 at the source cell;
-- ANDs with `FCD5[facing]`;
-- writes selector 2 back;
-- computes the adjacent cell;
-- ANDs its selector 2 with `FCD5[opposite(facing)]`;
-- writes it back.
+### OPEN_ARMED — state 2
 
-This clears the reciprocal LOW edge on both sides while preserving HIGH.
-
-It recalculates directional state and sets:
-
-    0x1BC4E2 = 1
-
-while the special movement/animation sequence executes.
-
-### 2 — OPEN_ARMED
-
-At the end of the opening sequence:
+After the opening movement/animation phase:
 
     0x1BC4E2 = 2
 
 and action 16 is invoked.
 
-The source/adjacent LOW bits remain clear at return from `0x2CE8B`.
-HIGH markers remain set.
-
-Because the immediate LOW wall has been cleared, the next forward input no
-longer satisfies the immediate LOW+HIGH diversion condition for this
-interface, and proceeds through the ordinary forward path.
+The LOW edge remains clear on both sides when `0x2CE8B` returns.
 
 ### FORWARD COMMIT
 
-On the next forward attempt:
+On a subsequent forward input, the immediate LOW wall is no longer present, so
+the engine follows the ordinary forward path.
 
-1. ordinary physical precheck executes;
-2. action 3 executes;
-3. for the transition family action 3 invokes the E.8 `A2D76` pre-transition
-   event path;
-4. when `0x1BC4E2 == 2`, the input path advances it to state 4;
-5. ordinary forward translation executes through the now-clear LOW edge;
-6. action 2 executes;
-7. action 2 invokes E.8 `A2DC7 -> A2BA6`;
-8. the staged destination/player transform and event-type-8 level transfer are
-   committed as VERIFIED in E.8.
+For a transition-source handler:
 
-Thus the transition is a multi-input, state-qualified path rather than a
-single traversal of a statically open graph edge.
+1. physical precheck;
+2. action 3;
+3. E.8 `A2D76` transition/event preparation;
+4. if `0x1BC4E2 == 2`, advance to state 4;
+5. ordinary grid translation across the clear edge;
+6. action 2;
+7. E.8 `A2DC7 -> A2BA6 -> event type 8 -> 0x5DC10` level transfer.
+
+The level-transfer payload itself remains VERIFIED by E.8.
 
 ### CANCEL / RECLOSE
 
-Several non-forward input branches detect:
+Non-forward input branches that encounter state 2 can call `0x2D150`.
 
-    0x1BC4E2 == 2
-
-and call runtime `0x2D150`.
-
-This path:
+That path:
 
 1. invokes action 17;
-2. enters special state 3;
-3. runs its close/animation sequence;
-4. reads selector 2 on the stored source cell and ORs
-   `FCD9[facing]`;
-5. reads selector 2 on the adjacent cell and ORs
-   `FCD9[opposite(facing)]`;
-6. writes both fields back;
-7. recalculates directional state;
-8. resets `0x1BC4E2 = 0`;
-9. invokes action 18.
+2. enters state 3;
+3. runs close/animation work;
+4. ORs the source selector-2 byte with `FCD9[facing]`;
+5. ORs the adjacent selector-2 byte with the opposite LOW mask;
+6. recalculates directional state;
+7. returns the special state to 0;
+8. invokes action 18.
 
-Actions 17 and 18 use the same VERIFIED starter default-allow path as action
-15.
-
-The cancellation path therefore restores the reciprocal LOW closure while
-leaving the HIGH special marker intact.
-
-## Why E.5 was correct
-
-E.5 classified the serialized initial portals as blocked because the ordinary
-translation primitive directly tests LOW `cell+0x02`.
-
-That remains correct for the serialized idle snapshot.
-
-E.9 adds the missing state transition:
-
-    CLOSED_SPECIAL
-      -> special action15 enable
-      -> OPEN_ARMED
-      -> ordinary translation
-      -> action2 level transition
-
-or:
-
-    CLOSED_SPECIAL
-      -> special action15 enable
-      -> OPEN_ARMED
-      -> cancel/action17
-      -> CLOSED_SPECIAL
-
-Static graph evidence was not wrong; it was incomplete without the
-HIGH-secondary special movement state.
+The reciprocal LOW closure is therefore restored while HIGH remains present.
 
 ## Reproducibility
 
-Added:
+Updated:
 
 - `tools/inspect_portal_enable_state.py`
 - `tests/test_inspect_portal_enable_state.py`
 
-The validator requires the authoritative SK.EXE and starter-save hashes,
-reuses the E.8 transition inventory and E.7 level-hook proof, and validates:
+The validator now checks:
 
-- exact object-3 clear mask table;
-- exact object-3 set mask table;
-- **6/6** executable state-machine region SHA-256 anchors;
+- authoritative executable/save SHA-256 values;
+- exact LOW clear/set tables;
+- **11/11** executable code-region hashes, including all wrapper families that
+  affect action 15;
 - **9/9** reciprocal LOW+HIGH portal markers;
-- starter per-level callback targets remain exact `RET`.
+- wrapper-specific serialized action-15 conditions;
+- E.7 starter callback no-op evidence.
 
-Authoritative evidence rerun:
+Correct serialized result:
 
-    PASS exe_hash=1 masks=2 region_anchors=6 portal_markers=9
-    actions_15_18=E7_default_allow
-
-Synthetic/structural regression logic: **4/4 PASS**.
+    portals=9
+    reciprocal_low_high=9
+    action15_allow=6
+    action15_blocked=3
+    errors=0
 
 ## Evidence classification
 
-VERIFIED for the nine starter transition interfaces:
+VERIFIED:
 
-- LOW+HIGH special-barrier detection;
-- reciprocal LOW clear masks;
-- reciprocal LOW restore masks;
-- HIGH marker preservation by the clear/restore operations;
-- action-15 allow gate;
-- open state progression to `0x1BC4E2 == 2`;
-- next-forward ordinary translation path;
-- action-3/action-2 transition commit chain from E.8;
-- action-17 cancel/reclose path;
-- reciprocal LOW closure restoration;
-- action-18 completion path.
+- HIGH-secondary immediate-barrier detection;
+- exact reciprocal LOW clear masks;
+- exact reciprocal LOW restore masks;
+- HIGH preservation by those mutations;
+- nine reciprocal LOW+HIGH starter transition markers;
+- wrapper-specific action-15 predicates;
+- OPENING / OPEN_ARMED / CANCEL_RECLOSE control-flow and LOW mutations;
+- transition commit path once the action-15 gate has enabled the interface.
 
 STATE-QUALIFIED:
 
-- portal traversability depends on the special movement state, not only the
-  serialized cell byte.
+- whether a particular portal can enter OPENING;
+- starter snapshot gives 6 ALLOW / 3 BLOCKED.
 
 FALSIFIED:
 
-- E.8 action-3 helper `A2D76` is itself the LOW-edge unlock;
-- the nine starter transition interfaces are ordinary statically open edges.
+- all nine E.8 transition handlers unconditionally allow action 15;
+- `A2D76` is itself the LOW-edge unlock;
+- the transition interfaces are ordinary statically open edges.
 
 OPEN:
 
-- composition of this portal state machine into the complete multi-step
-  orientation/player-state graph;
-- interactions with live MSP/spatial occupancy changes while the portal is
-  armed;
-- complete turn-state integration;
+- mutations that change the three currently blocked action-15 predicates;
+- reciprocal-side ingress semantics for neighboring handlers;
+- physical MSP/spatial state after a dynamically enabled edge;
+- composition into the complete multi-step world graph;
 - final one-way and softlock analysis.
 
 ## Gate
 
-`starter_portal_enable_state_machine = VERIFIED`
+`starter_portal_mechanism = VERIFIED`
 
 `starter_transition_portal_markers = 9/9 VERIFIED`
 
-`portal_low_clear_restore = VERIFIED`
+`serialized_action15_allow = 6/9`
 
-`portal_transition_commit = VERIFIED`
+`serialized_action15_blocked = 3/9`
 
-`portal_dynamic_graph_layer = READY_TO_COMPOSE`
+`portal_enablement = VERIFIED_STATE_QUALIFIED`
 
 `one_way_verdict_authorized = false`
 
@@ -304,7 +315,7 @@ OPEN:
 
 ## Next — STONE-K292-E.10
 
-Compose the E.9 CLOSED_SPECIAL -> OPEN_ARMED -> COMMIT/CANCEL states with E.5
-orientation-aware translation, E.3 MSP clearance and E.4 monster-spatial
-occupancy. Preserve dynamic occupancy/state uncertainty explicitly. Only then
-begin state-qualified reachability and candidate one-way analysis.
+Resolve the state producers for the three blocked action-15 gates, especially
+handler 87's `cell(2,3)+0x09` dependency and handlers 106/107's `-1`
+selector-4 state. Then compose dynamically enabled portal edges with E.3 MSP,
+E.4 spatial occupancy and E.8 level-transition payloads.
