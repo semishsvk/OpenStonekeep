@@ -49,3 +49,27 @@ def test_all_region_anchors_are_unique():
     spans=[(va,n) for va,n,_ in tool.ALL_REGIONS.values()]
     assert len(tool.ALL_REGIONS)==30
     assert len(set(spans))==len(spans)
+
+
+def test_tranche3_closes_remaining_33_handlers():
+    assert len(tool.TRANCHE3_HANDLERS)==33
+    covered=set(tool.HANDLERS)|set(tool.TRANCHE2_HANDLERS)|set(tool.TRANCHE3_HANDLERS)
+    assert covered==tool.EXPECTED_MOVEMENT_HANDLER_IDS
+    assert len(covered)==59
+
+def test_tranche3_family_semantics_preserve_indirect_effects():
+    assert '2A7FA' in tool.TRANCHE3_HANDLERS[2]['actions'][4]
+    assert 'A2DC7' in tool.TRANCHE3_HANDLERS[87]['actions'][2]
+    assert 'A2D76' in tool.TRANCHE3_HANDLERS[87]['actions'][3]
+    assert 'SECOND_GLOBAL_CALLBACK' in tool.TRANCHE3_HANDLERS[88]['actions'][5]
+    assert tool.TRANCHE3_HANDLERS[108]['direct_cell_write']=='NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5'
+
+def test_all_three_tranches_are_disjoint():
+    a,b,c=set(tool.HANDLERS),set(tool.TRANCHE2_HANDLERS),set(tool.TRANCHE3_HANDLERS)
+    assert not (a&b or a&c or b&c)
+
+def test_all_region_anchors_include_tranche3():
+    assert len(tool.TRANCHE3_REGIONS)==26
+    assert len(tool.ALL_REGIONS)==56
+    spans=[(va,n) for va,n,_ in tool.ALL_REGIONS.values()]
+    assert len(set(spans))==len(spans)
