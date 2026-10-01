@@ -27,3 +27,25 @@ def test_region_anchors_are_unique():
     spans=[(va,n) for va,n,_ in tool.REGIONS.values()]
     assert len(tool.REGIONS)>=10
     assert len(set(spans))==len(spans)
+
+
+def resolve_t2(h):
+    x=tool.TRANCHE2_HANDLERS[h]
+    if 'alias_action_semantics' in x:
+        return resolve_t2(x['alias_action_semantics'])
+    return x['actions']
+
+def test_tranche2_adds_twenty_handlers_with_all_movement_actions():
+    assert len(tool.TRANCHE2_HANDLERS)==20
+    assert set(tool.HANDLERS).isdisjoint(tool.TRANCHE2_HANDLERS)
+    for h in tool.TRANCHE2_HANDLERS:
+        assert set(resolve_t2(h))=={2,3,4,5}
+
+def test_handler91_and_116_have_direct_state_deltas():
+    assert tool.TRANCHE2_HANDLERS[91]['actions'][3]['writes'][0]=={'row':5,'col':9,'selector':4,'from':1,'to':2}
+    assert tool.TRANCHE2_HANDLERS[116]['actions'][5]['writes'][0]=={'row':8,'col':10,'selector':5,'from':1,'to':2}
+
+def test_all_region_anchors_are_unique():
+    spans=[(va,n) for va,n,_ in tool.ALL_REGIONS.values()]
+    assert len(tool.ALL_REGIONS)==30
+    assert len(set(spans))==len(spans)
