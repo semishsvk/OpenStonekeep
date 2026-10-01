@@ -63,7 +63,36 @@ TRANCHE2_REGIONS={
  'family_3898a_core':(0x3898A,505,'3fbe69fb761573352e45e94236dfe02abcb528a1a16588810a7e20c6a77f6e89'),
  'h419_wrapper':(0x4FEFB,28,'98a276a23330a1c5ae2c7f429ae4c72592768b3b5d375284a2624f0d9aa9f919'),
 }
-ALL_REGIONS={**REGIONS,**TRANCHE2_REGIONS}
+
+TRANCHE3_REGIONS={
+ 'family_ac4aa_core':(0xAC4AA,494,'039c79542dff0643055bf302d69879d76a71c477d18cd6506a852fa7ecc6f54c'),
+ 'h2_h3_wrappers':(0x6A2D5,38,'37f1c0e827e734d3761bdd0301621897d60f5b7e462ea857d3af87c9ec017268'),
+ 'family_af87f_core':(0xAF87F,444,'37395bb8ed68b6c7aa7e97792aa3cd754be913cf38519e63138a38ba3ec55a02'),
+ 'h21_24_wrappers':(0xAFA3B,38,'d1b5f6ef8dae091abb1012f8830580bcd47315e7d3a4605f5a1239d3db3da2ae'),
+ 'h94_core':(0x84F3A,107,'c35d8d82f611fbf32882f8ab2d5a270c88e9247d220321d4d212e79c9ee6a1c3'),
+ 'h94_wrapper':(0x84FC2,9,'a4f09cc514aeaea058d9444164c2f517c9675548bb4456fe25cfab9ef65d6679'),
+ 'h98_103_common':(0x5EEEA,110,'2f116e9ba08d9a728923e9e614ca2050852eba1d6945c29c76f5ed25720bb957'),
+ 'h98_103_wrappers':(0x5EF58,72,'8cd744c1aeaf873c95cc3a7dc78712c439bf9c32729ddb07952861afafea5e5c'),
+ 'h109_wrapper':(0x5F116,166,'1442183a1f119b7e18771a419c4d975388c4d97885a2171d88d7fadd2231b094'),
+ 'h109_ac4_wrapper':(0x6A183,144,'ead634a971d2113fa7f055f7ca7810d19c966722689be1984f05a37c4a15372d'),
+ 'default_callback_core':(0x3D4F5,13,'31df3bff112887d59319063795e39acb86572dc47835dd26d6f2b480b723e315'),
+ 'h60_wrapper':(0x3C57B,200,'0b2e78491631414f5ced28fa2add11f692958e1f1fd8e4cc79ed85e565b59208'),
+ 'h86_wrapper':(0x3D86A,162,'b5d42b69d072d77253ea3e2daa1d9a4e1b9a3b88cb524d1393f34a95a4812683'),
+ 'h95_97_region':(0x5ECAB,575,'8b91a1a2e7e0491f6861b6323f38e70c5bdad520819677736be40e172d65aa70'),
+ 'h104_105_region':(0x5EFA0,135,'aea67732ce82977a9efc4fa5e052abcdb5d86fd4eb0e58992d6e32801a69e9b8'),
+ 'family_3cfee_core':(0x3CFEE,154,'36a2889a901c1c4be9c5f4b88868942e9226d6d779ddffb9b21478958b8fb7fa'),
+ 'h87_wrapper':(0x5F3B9,68,'52760f9c70718ddf0244354251a07d600807d3ce02f14f1b012bd3562659e15a'),
+ 'h89_90_wrappers':(0x5E8D2,116,'d5fb61c0bf66ccba53828d002a400b40ce75f13de66736d4fadb3b24a311a44d'),
+ 'h411_413_wrappers':(0x4F8FC,64,'6100553dfc00d4ee5146e48d6354ab5822994ea9c61c666d9527eaa670d5166f'),
+ 'h88_wrapper':(0x5E868,106,'3d843300c461bbb5a9db99aa32ba3796b7c2d92bb001afd526d6fcdff995d594'),
+ 'h106_107_wrappers':(0x5F027,203,'70ee5c07364911ae6b2262ca49a719bea429635467b568b676c7d09a5286877b'),
+ 'h92_wrapper':(0x5EB8B,211,'1315ac31e14234a2c0367bd109bf73d472f17fbe6f254f34630f148fe68f9d6b'),
+ 'h113_wrapper':(0x5F2E8,209,'b65c8769fecfb987403042f81036cd177041f7d7243bf56643fed95f879f97e4'),
+ 'h108_wrapper':(0x5F0F2,36,'181c623f07a0b550591cfdcc16742a27dce1700d85c70a518bbd2ba7d2df6d82'),
+ 'h108_core':(0x6BAD7,169,'c42f75db531d7cc478e906605d9d5854b5f4947453bda144b256d36f1e2da07c'),
+ 'h98_103_core_6a2fb':(0x6A2FB,228,'ef19d11bad983039e6a751083c0e0be74a8dd865617272458019e210ea51e4c4'),
+}
+ALL_REGIONS={**REGIONS,**TRANCHE2_REGIONS,**TRANCHE3_REGIONS}
 
 HANDLERS={
  110:{'target':0x5F1DA,'actions':{
@@ -134,6 +163,62 @@ TRANCHE2_HANDLERS={
  419:{'family':'3898A','actions':{2:'DELEGATE_NO_PREWRITE_OBSERVED',3:'DELEGATE_NO_PREWRITE_OBSERVED',4:'INDIRECT_EVENT_2A7FA_0_1',5:'DELEGATE_NO_PREWRITE_OBSERVED'}},
 }
 
+
+AC4AA_MOVEMENT_ACTIONS={
+ 2:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT',
+ 3:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT',
+ 4:'CONDITIONAL_INDIRECT_EVENT_2A7FA_THEN_GLOBAL_CALLBACK_1B9DDC',
+ 5:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT',
+}
+DEFAULT_MOVEMENT_ACTIONS={
+ a:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT' for a in (2,3,4,5)
+}
+CFEE_MOVEMENT_ACTIONS={
+ 2:'CONDITIONAL_INDIRECT_EVENT_A2DC7_THEN_GLOBAL_CALLBACK_1B9DDC',
+ 3:'CONDITIONAL_INDIRECT_EVENT_A2D76_THEN_GLOBAL_CALLBACK_1B9DDC',
+ 4:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT',
+ 5:'INDIRECT_GLOBAL_CALLBACK_1B9DDC_THEN_DEFAULT',
+}
+DUAL_AC4AA_CFEE_MOVEMENT_ACTIONS={
+ 2:'AC4AA_GLOBAL_CALLBACK_THEN_CONDITIONAL_A2DC7_THEN_SECOND_GLOBAL_CALLBACK',
+ 3:'AC4AA_GLOBAL_CALLBACK_THEN_CONDITIONAL_A2D76_THEN_SECOND_GLOBAL_CALLBACK',
+ 4:'CONDITIONAL_2A7FA_THEN_AC4AA_GLOBAL_CALLBACK_THEN_SECOND_GLOBAL_CALLBACK',
+ 5:'AC4AA_GLOBAL_CALLBACK_THEN_SECOND_GLOBAL_CALLBACK',
+}
+HANDLER13_INHERITED_ACTIONS={
+ 2:'DELEGATE_NO_PREWRITE_OBSERVED',
+ 3:'DELEGATE_NO_PREWRITE_OBSERVED',
+ 4:'INHERITS_CELL_VARIANT_CONDITIONAL_INDIRECT_EVENT',
+ 5:'INHERITS_CELL_VARIANT_CONDITIONAL_INDIRECT_EVENT',
+}
+TRANCHE3_HANDLERS={
+ **{h:{'family':'AC4AA_MOVEMENT','actions':dict(AC4AA_MOVEMENT_ACTIONS),
+       'direct_cell_write':'NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5'}
+    for h in (2,3,21,22,23,24,94,98,99,100,101,102,103,109)},
+ **{h:{'family':'DEFAULT_GLOBAL_CALLBACK','actions':dict(DEFAULT_MOVEMENT_ACTIONS),
+       'direct_cell_write':'NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5'}
+    for h in (60,86,95,96,97,104,105)},
+ **{h:{'family':'3CFEE_MOVEMENT','actions':dict(CFEE_MOVEMENT_ACTIONS),
+       'direct_cell_write':'NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5'}
+    for h in (87,89,90,411,412,413)},
+ **{h:{'family':'AC4AA_THEN_3CFEE_MOVEMENT','actions':dict(DUAL_AC4AA_CFEE_MOVEMENT_ACTIONS),
+       'direct_cell_write':'NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5'}
+    for h in (88,106,107)},
+ 92:{'family':'CHAIN_TO_HANDLER13','actions':dict(HANDLER13_INHERITED_ACTIONS),
+     'direct_cell_write':'WRAPPER_MOVEMENT_DIRECT_WRITE_NOT_OBSERVED'},
+ 113:{'family':'CHAIN_TO_HANDLER13','actions':dict(HANDLER13_INHERITED_ACTIONS),
+      'direct_cell_write':'WRAPPER_MOVEMENT_DIRECT_WRITE_NOT_OBSERVED'},
+ 108:{'family':'6BAD7_MOVEMENT_DEFAULT',
+      'actions':dict(DEFAULT_MOVEMENT_ACTIONS),
+      'direct_cell_write':'NO_DIRECT_WRITE_OBSERVED_FOR_ACTIONS_2_3_4_5',
+      'note':'movement actions branch to 0x6BA90 before the 0x6BBxx/0x6BDxx setter paths'},
+}
+EXPECTED_MOVEMENT_HANDLER_IDS={
+ 2,3,13,14,15,16,21,22,23,24,42,43,60,75,76,77,78,79,80,86,87,88,89,90,
+ 91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,
+ 111,112,113,115,116,410,411,412,413,414,415,416,417,418,419,
+}
+
 class LEImage:
     def __init__(self,data:bytes):
         self.data=data
@@ -183,9 +268,15 @@ def validate(exe:Path):
     setter=list(struct.unpack('<14I',le.read_va(SETTER_TABLE_VA,56)))
     if getter!=EXPECTED_GETTER_RAW: errors.append('getter selector table mismatch')
     if setter!=EXPECTED_SETTER_RAW: errors.append('setter selector table mismatch')
+    tranche_sets=[set(HANDLERS),set(TRANCHE2_HANDLERS),set(TRANCHE3_HANDLERS)]
+    if any(tranche_sets[i]&tranche_sets[j] for i in range(3) for j in range(i+1,3)):
+        errors.append('handler overlap across state-delta tranches')
+    covered=set().union(*tranche_sets)
+    if covered!=EXPECTED_MOVEMENT_HANDLER_IDS:
+        errors.append('movement-handler state-delta coverage mismatch')
     return {'exe':str(exe),'exe_sha256':sha,'selector_map':SELECTOR_MAP,
             'selector_tables':{'getter_raw':[hex(x) for x in getter],'setter_raw':[hex(x) for x in setter]},
-            'handlers':HANDLERS,'tranche2_handlers':TRANCHE2_HANDLERS,'region_validation':region_results,
+            'handlers':HANDLERS,'tranche2_handlers':TRANCHE2_HANDLERS,'tranche3_handlers':TRANCHE3_HANDLERS,'region_validation':region_results,
             'negative_evidence_policy':NEGATIVE_EVIDENCE_POLICY,
             'errors':errors,'pass':not errors}
 
@@ -193,6 +284,6 @@ def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--exe',required=True,type=Path); ap.add_argument('--json',action='store_true')
     a=ap.parse_args(); out=validate(a.exe)
     if a.json: print(json.dumps(out,indent=2,sort_keys=True))
-    else: print('PASS' if out['pass'] else 'FAIL','regions=%d handlers=%d errors=%d'%(len(ALL_REGIONS),len(HANDLERS)+len(TRANCHE2_HANDLERS),len(out['errors'])))
+    else: print('PASS' if out['pass'] else 'FAIL','regions=%d handlers=%d errors=%d'%(len(ALL_REGIONS),len(HANDLERS)+len(TRANCHE2_HANDLERS)+len(TRANCHE3_HANDLERS),len(out['errors'])))
     return 0 if out['pass'] else 2
 if __name__=='__main__': raise SystemExit(main())
