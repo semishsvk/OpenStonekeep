@@ -2,7 +2,7 @@ name: OpenStonekeep FAST tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, research/stone-k291-cell-structure]
     paths:
       - "tools/**"
       - "tests/**"
