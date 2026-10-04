@@ -133,7 +133,10 @@ def compose(e11:dict,e12:dict,e13:dict,e14:dict,h89:dict)->dict:
         b=matches[0] if len(matches)==1 else None
         if b is not None:
             return_verified=bool(
-                b["outgoing_reachability"]=="DIRECT_ENABLE_INITIAL_STATE"
+                b["outgoing_reachability"] in (
+                    "DIRECT_ENABLE_INITIAL_STATE",
+                    "IMMEDIATE_RECIPROCAL_VERIFIED",
+                )
                 and b["physical_clear_after_open"]
                 and b["transition_commit"]
             )
