@@ -30,6 +30,7 @@ def test_expected_pair_geometry_all_five():
     pairs=[
         (edge(87,1,(2,3),"S",15,(3,3,0)),edge(411,15,(2,3),"S",1,(3,3,0))),
         (edge(88,1,(2,25),"S",15,(3,25,0)),edge(412,15,(2,25),"S",1,(3,25,0))),
+        (edge(89,1,(23,3),"N",15,(22,3,2)),edge(415,15,(23,3),"N",1,(22,3,2))),
         (edge(90,1,(23,25),"N",15,(22,25,2)),edge(413,15,(23,25),"N",1,(22,25,2))),
         (edge(106,1,(11,5),"N",2,(7,2,0)),edge(144,2,(6,2),"S",1,(10,5,2))),
         (edge(107,1,(7,25),"W",2,(2,18,1)),edge(145,2,(2,17),"E",1,(7,24,3))),
@@ -37,11 +38,8 @@ def test_expected_pair_geometry_all_five():
     for a,b in pairs:
         assert tool.immediate_reciprocal(a,b)
 
-def test_h89_expected_missing_same_interface_partner():
+def test_h89_h415_same_interface_partner():
     a=edge(89,1,(23,3),"N",15,(22,3,2))
-    candidates=[
-        edge(411,15,(2,3),"S",1,(3,3,0)),
-        edge(412,15,(2,25),"S",1,(3,25,0)),
-        edge(413,15,(23,25),"N",1,(22,25,2)),
-    ]
-    assert not any(tool.immediate_reciprocal(a,b) for b in candidates)
+    b=edge(415,15,(23,3),"N",1,(22,3,2))
+    assert tool.immediate_reciprocal(a,b)
+    assert tool.immediate_reciprocal(b,a)
