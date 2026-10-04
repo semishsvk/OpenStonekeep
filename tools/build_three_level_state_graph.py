@@ -284,8 +284,8 @@ def physical_move(level: dict, row: int, col: int, facing: int, action: str):
     if level["spatial"] is None:
         return None, "SPATIAL_UNRESOLVED"
     if (
-        level["spatial"].get((row, col), ()) & src_set
-        or level["spatial"].get((nr, nc), ()) & dst_set
+        set(level["spatial"].get((row, col), ())) & src_set
+        or set(level["spatial"].get((nr, nc), ())) & dst_set
     ):
         return None, "SPATIAL_BLOCKED"
     return (nr, nc, facing), "CLEAR"
@@ -319,7 +319,7 @@ def turn_physical(level: dict, row: int, col: int, new_facing: int):
         return False, "SPATIAL_UNRESOLVED"
 
     blockers = {0x40 + new_facing, 0x46 + (new_facing & 1), 0x45}
-    if level["spatial"].get((row, col), ()) & blockers:
+    if set(level["spatial"].get((row, col), ())) & blockers:
         return False, "SPATIAL_BLOCKED"
     return True, "CLEAR"
 
