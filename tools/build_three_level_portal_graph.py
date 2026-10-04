@@ -8,13 +8,14 @@ from build_conditional_portal_graph import build as build_e11
 from inspect_selection_reachability import inspect as inspect_e12
 from inspect_level02_initial_state import inspect as inspect_e13
 from inspect_level02_runtime_tail import inspect as inspect_e14
+from inspect_h89_reciprocal_return import inspect as inspect_h89
 
 DIR_INDEX={"N":0,"W":1,"S":2,"E":3}
 DIR_DELTA=((-1,0),(0,-1),(1,0),(0,1))
 OPPOSITE={0:2,1:3,2:0,3:1}
 
 
-def normalized_edges(e11:dict,e13:dict,e14:dict,e12:dict)->list[dict]:
+def normalized_edges(e11:dict,e13:dict,e14:dict,e12:dict,h89:dict)->list[dict]:
     physical2={x["handler_id"]:x for x in e14["level02_portals"]}
     edges=[]
     for x in e11["transitions"]:
@@ -53,6 +54,26 @@ def normalized_edges(e11:dict,e13:dict,e14:dict,e12:dict)->list[dict]:
             ),
             "source_checkpoint":"E.11/E.12",
         })
+    # h415 is a conditional transition wrapper rather than one of the E.8
+    # simple transition wrappers. E.15 independently closes its h89 reciprocal
+    # sequence: h85 special-open -> cross -> turn S->N -> h415 action3.
+    if h89.get("pass") and h89.get("immediate_same_interface_reciprocal_verified"):
+        p = h89["h415_transition_payload"]
+        edges.append({
+            "source_level": p["source_level"],
+            "handler_id": 415,
+            "source": list(p["source_cell"]),
+            "direction": p["source_direction"],
+            "target_level": p["target_level"],
+            "target_spawn": list(p["target_spawn"]),
+            "enable_class": "H85_SPECIAL_OPEN_PLUS_TURN",
+            "outgoing_reachability": "IMMEDIATE_RECIPROCAL_VERIFIED",
+            "producer_evidence": "E15_H89_H415_SEQUENCE",
+            "physical_clear_after_open": True,
+            "transition_commit": True,
+            "source_checkpoint": "E.15",
+        })
+
     for x in e13["return_transitions"]:
         p=physical2.get(x["handler_id"])
         edges.append({
@@ -90,12 +111,12 @@ def immediate_reciprocal(a:dict,b:dict)->bool:
     return b["target_spawn"]==expected_return
 
 
-def compose(e11:dict,e12:dict,e13:dict,e14:dict)->dict:
+def compose(e11:dict,e12:dict,e13:dict,e14:dict,h89:dict)->dict:
     errors=[]
-    for name,obj in (("E.11",e11),("E.12",e12),("E.13",e13),("E.14",e14)):
+    for name,obj in (("E.11",e11),("E.12",e12),("E.13",e13),("E.14",e14),("E.15-h89",h89)):
         if not obj.get("pass"):
             errors.append(f"{name} validation failed")
-    edges=normalized_edges(e11,e13,e14,e12)
+    edges=normalized_edges(e11,e13,e14,e12,h89)
     by_handler={x["handler_id"]:x for x in edges}
     if len(by_handler)!=len(edges):
         errors.append("duplicate handler IDs in transition graph")
@@ -137,7 +158,7 @@ def compose(e11:dict,e12:dict,e13:dict,e14:dict)->dict:
             "classification":status,
         })
 
-    expected_pairs={(87,411),(88,412),(90,413),(106,144),(107,145)}
+    expected_pairs={(87,411),(88,412),(89,415),(90,413),(106,144),(107,145)}
     actual_pairs={
         (x["outgoing_handler"],x["reciprocal_handler"])
         for x in results if x["reciprocal_handler"] is not None
@@ -145,7 +166,7 @@ def compose(e11:dict,e12:dict,e13:dict,e14:dict)->dict:
     if actual_pairs!=expected_pairs:
         errors.append(f"unexpected reciprocal pair set: {sorted(actual_pairs)}")
     unmatched=[x["outgoing_handler"] for x in results if not x["immediate_return_verified"]]
-    if unmatched!=[89]:
+    if unmatched:
         errors.append(f"unexpected unresolved L1 outgoing handlers: {unmatched}")
 
     return {
@@ -166,9 +187,10 @@ def compose(e11:dict,e12:dict,e13:dict,e14:dict)->dict:
             if not x["immediate_return_verified"]
         ],
         "verified_pairs":[list(x) for x in sorted(expected_pairs)],
+        "h89_reciprocal_evidence": h89,
         "verdict_scope":{
-            "five_pairs":"one-way-at-immediate-interface concern FALSIFIED when the outgoing transition executes",
-            "handler89":"NO_IMMEDIATE_RECIPROCAL_HANDLER_OBSERVED; requires target-level navigation analysis",
+            "six_pairs":"one-way-at-immediate-interface concern FALSIFIED when the outgoing transition executes",
+            "handler89":"IMMEDIATE_SAME_INTERFACE_RETURN_VERIFIED via h85 open + turn + h415",
             "global_one_way":"NOT_AUTHORIZED",
             "global_softlock":"NOT_AUTHORIZED",
         },
@@ -182,7 +204,8 @@ def build(exe:Path,level01:Path,level01a:Path,gameinfo:Path,master:Path,group01:
     e12=inspect_e12(exe,level01,gameinfo)
     e13=inspect_e13(exe,master,group02)
     e14=inspect_e14(exe,group01,group02,level01)
-    return compose(e11,e12,e13,e14)
+    h89=inspect_h89(exe,level01a)
+    return compose(e11,e12,e13,e14,h89)
 
 
 def main():
