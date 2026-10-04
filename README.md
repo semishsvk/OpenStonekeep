@@ -1,13 +1,28 @@
 # OpenStonekeep
 
-**Status: INCUBATION / RESEARCH**
+**Status: ACTIVE RESEARCH**
 
-Isolated OpenRemaster-family research project for **Stonekeep**. Goal: understand original data before engine development using immutable source inventory, deterministic RE, documentation, small POCs, tests and persistent checkpoints.
+OpenStonekeep is the isolated OpenRemaster reconstruction/research project for **Stonekeep**.
 
-Active priority remains **OpenAzrael → OpenCadaver → OpenRemaster-Framework**. No cross-project mutable sharing or writes.
+The authoritative original CD corpus is read-only. Git stores only source-safe reverse-engineering code, tests, contracts and evidence.
 
-**GAME-SPECIFIC FIRST → VALIDATE → GENERALIZE → FRAMEWORK**
+## Branch policy
 
-Pipeline: `SOURCE → INVENTORY → HASH → CLASSIFY → EXTRACT → STRUCTURAL ANALYSIS → HYPOTHESIS → TEST → VALIDATE → CHECKPOINT → OPTIONAL GENERALIZATION INTO OPENREMASTER`
+- `main` is the stable branch.
+- `research/stone-k291-cell-structure` is the active evidence branch.
+- Their divergence is intentional while K292 transition semantics remain state-qualified.
+- Do not broad-merge merely to remove divergence.
 
-Checkpoint prefix: `STONE-K###`. No copyrighted originals in Git. No full runtime/remake/candidate/release or mass conversion pipeline during incubation.
+## Current frontier
+
+The current evidence frontier is **STONE-K292-E.12**. Selection-source mechanisms for the producer-conditional starter portals are now bound to serialized starter state, while LEVEL2 initial dynamic state is still source-incomplete.
+
+One-way and softlock verdicts remain explicitly unauthorized until the remaining state transition evidence closes.
+
+See `CURRENT_STATUS.md` and the `checkpoints/STONE-K292-*.md` chain.
+
+## Promotion boundary
+
+**GAME-SPECIFIC FIRST -> VALIDATE -> GENERALIZE -> FRAMEWORK**
+
+Original copyrighted data are never committed. Framework promotion requires reproducible, game-specific evidence rather than shared-engine assumptions.
