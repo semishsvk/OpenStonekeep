@@ -8,8 +8,12 @@ Evidence-backed CD layout:
   4 trailing bytes
 
 Each 22-byte directory record contains a 12-byte NUL-padded resource name and
-an absolute cumulative payload-end offset at record +0x0E. The remaining six
-metadata bytes are preserved but intentionally not assigned semantics here.
+an absolute payload-start offset at record +0x0E. The payload for entry i is
+[offset[i], offset[i+1]); for the final entry it is
+[offset[last], filesize-4). Duplicate offsets represent zero-length resources.
+
+The installed DATA GROUP is the CD GROUP with exactly the directory prefix
+removed; payload bytes and the 4-byte trailer are preserved.
 """
 from __future__ import annotations
 import argparse
@@ -30,44 +34,67 @@ def parse(path: Path) -> dict:
 
     count = struct.unpack_from("<H", data, 0)[0]
     directory_end = 2 + count * ENTRY_SIZE
+    payload_limit = len(data) - TRAILER_SIZE
     if directory_end + TRAILER_SIZE > len(data):
         raise ValueError("not a valid CD-style GROUP directory")
 
-    entries = []
-    payload_start = directory_end
-    previous_end = directory_end
+    raw_entries = []
     for index in range(count):
         off = 2 + index * ENTRY_SIZE
         record = data[off:off + ENTRY_SIZE]
         raw_name = record[:NAME_SIZE]
         name = raw_name.split(b"\0", 1)[0].decode("ascii", "replace")
-        cumulative_end = struct.unpack_from("<I", record, 0x0E)[0]
-        if cumulative_end < previous_end:
-            raise ValueError(
-                f"non-monotonic cumulative end at entry {index}: "
-                f"0x{cumulative_end:X} < 0x{previous_end:X}"
-            )
-        if cumulative_end > len(data) - TRAILER_SIZE:
-            raise ValueError(
-                f"payload end outside GROUP at entry {index}: 0x{cumulative_end:X}"
-            )
-        entries.append({
+        payload_start = struct.unpack_from("<I", record, 0x0E)[0]
+        raw_entries.append({
             "index": index,
             "name": name,
             "directory_offset": off,
             "metadata_12_13_hex": record[12:14].hex(),
-            "payload_start": previous_end,
-            "payload_end": cumulative_end,
-            "payload_size": cumulative_end - previous_end,
+            "payload_start": payload_start,
             "metadata_18_21_hex": record[18:22].hex(),
         })
-        previous_end = cumulative_end
 
-    if count and previous_end != len(data) - TRAILER_SIZE:
-        raise ValueError(
-            f"last cumulative end 0x{previous_end:X} != filesize-4 "
-            f"0x{len(data)-TRAILER_SIZE:X}"
+    if count:
+        if raw_entries[0]["payload_start"] != directory_end:
+            raise ValueError(
+                "first payload start does not equal directory end: "
+                f"0x{raw_entries[0]['payload_start']:X} != 0x{directory_end:X}"
+            )
+        previous = directory_end
+        for entry in raw_entries:
+            start = entry["payload_start"]
+            if start < previous:
+                raise ValueError(
+                    f"non-monotonic payload start at entry {entry['index']}: "
+                    f"0x{start:X} < 0x{previous:X}"
+                )
+            if start > payload_limit:
+                raise ValueError(
+                    f"payload start outside GROUP at entry {entry['index']}: "
+                    f"0x{start:X}"
+                )
+            previous = start
+
+    entries = []
+    for index, entry in enumerate(raw_entries):
+        start = entry["payload_start"]
+        end = (
+            raw_entries[index + 1]["payload_start"]
+            if index + 1 < count
+            else payload_limit
         )
+        if end < start:
+            raise ValueError(
+                f"negative payload interval at entry {index}: "
+                f"0x{start:X}..0x{end:X}"
+            )
+        entries.append({
+            **entry,
+            "payload_end": end,
+            "payload_size": end - start,
+            "installed_payload_start": start - directory_end,
+            "installed_payload_end": end - directory_end,
+        })
 
     return {
         "path": str(path),
@@ -76,7 +103,7 @@ def parse(path: Path) -> dict:
         "entry_count": count,
         "entry_size": ENTRY_SIZE,
         "directory_end": directory_end,
-        "payload_area_size": (len(data) - TRAILER_SIZE) - payload_start,
+        "payload_area_size": payload_limit - directory_end,
         "trailer_hex": data[-TRAILER_SIZE:].hex(),
         "entries": entries,
     }
